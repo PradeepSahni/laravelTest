@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use App\Models\User;
+use App\Models\Email;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Product;
 use App\Mail\RegistrationMail;
-use Mail;
+use Mail,PDF;
 class RegisterController extends Controller
 {
     /*
@@ -65,20 +68,61 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        $this->sendmail();
-        return User::create([
+        $createUser = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
-    }
-    public  function sendmail(){
-        $myEmail = 'pk1105806@gmail.com';
-        $details = [
-            'title' => 'Mail Demo from ItSolutionStuff.com',
-            'url' => 'https://www.itsolutionstuff.com'
+        Product::factory(10)->create();
+        $getproduct = Product::where('user_id',$createUser->id)->first();
+        if(!empty($getproduct)){
+            $data['product'] = $getproduct->product_name;
+        }else{ $data['product'] = 'Jeans'; }
+        
+        // $details = [
+            //     'name' => $data['name'],
+            //     'product' => $data['product'],
+            //     'title' => 'Mail Demo form Registration',
+            //     'url' => '/login'
+            // ];
+            
+            // $pdf = PDF::loadView('pdf.registrationPdf', $details);
+            // return $pdf->download('itsolutionstuff.pdf');
+            // Storage::put('public/csv/name.pdf',$content) ;
+            $details = [
+                'product' => $data['product'],
+                'name' => $data['name']
         ];
+        $filename = $data['name']?str_replace(' ','',$data['name']):time();
+        $filename = $filename.'_'.date('dYmHsm').'_Registration.pdf';
+        $pdf = PDF::loadView('pdf.registrationPdf', $details);
+        $content = $pdf->download($filename);
+        Storage::put('public/registration_pdf/'.$filename,$content);
+        // $data['pdf_file'] = Storage::url('registration_pdf/'.$filename);
+        $data['user_id'] = $createUser->id;
+        Email::create([
+            'user_id' => $createUser->id,
+            'pdf_file' => $filename,
+        ]);
+        $this->sendmail($data);
+        
+        return $createUser;
+    }
+    public  function sendmail($data){
+        $myEmail = $data['email'];
+        $details = [
+            'name' => $data['name'],
+            'product' => $data['product'],
+            'title' => 'Mail Demo form Registration',
+            'user_id' =>  $data['user_id']
+        ];
+
+        // $filename = $data['name']?$data['name']:time();
+        // $filename = $filename.'_Registration.pdf';
+        // $pdf = PDF::loadView('pdf.registrationPdf', $details);
+        // $content = $pdf->download('registration.pdf');
+        // Storage::put('registrationPDF/'.$filename,$content) ;
+
         Mail::to($myEmail)->send(new RegistrationMail($details));
-        dd("Mail Send Successfully");
     }
 }

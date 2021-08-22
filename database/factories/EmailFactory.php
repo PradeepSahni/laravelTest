@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Email;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use App\Models\User;
 class EmailFactory extends Factory
 {
     /**
@@ -22,9 +22,8 @@ class EmailFactory extends Factory
     public function definition()
     {
         return [
-            'to_email' => $this->faker->safeEmail(),
-            'from_email' => $this->faker->safeEmail(),
-            'message' => $this->faker->word
+            'user_id' => User::all()->random()->id,
+            'pdf_file' => $this->faker->word.'.pdf'
         ];
     }
 }

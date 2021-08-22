@@ -13,6 +13,6 @@ class EmailTableSeeder extends Seeder
      */
     public function run()
     {
-        Email::factory(50)->create();
+        Email::factory(5)->create();
     }
 }

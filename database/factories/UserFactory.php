@@ -29,6 +29,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => Hash::make('password'), // password
             'remember_token' => Str::random(10),
+            'download' => '0',
+            'download_limit' => $this->faker->randomDigit
         ];
     }
 
